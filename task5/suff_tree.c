@@ -51,31 +51,34 @@ st_state st_transition(const char* str, st_tree* tree, st_state state, int32_t l
     while (left < right) {
         st_node* node = &tree->m_nodes[state.m_node];
         int32_t sufflen = st_suflen(node);
-        // transition within current vertex
-        if (state.m_pos != sufflen) {
-            int32_t pos = node->m_left + state.m_pos;
-            int32_t trlen = right - left;
-            if (str[pos] != str[left]) {
+        if (state.m_pos == sufflen) {
+            // transition to next node
+            char ch = str[left];
+            int32_t nextni = st_get_children(node, ch);
+            if (nextni == -1) {
                 state.m_node = -1;
                 state.m_pos  = -1;
-                return state;
-            } else if (trlen < sufflen - state.m_pos) {
-                state.m_pos += trlen;
-                return state;
+                return  state;
+            } else {
+                state.m_node = nextni;
+                state.m_pos  = 0;
             }
-            left += sufflen - state.m_pos;
-            state.m_pos = sufflen;
-        }
-        // transition to next node
-        char ch = str[left];
-        int32_t nextni = st_get_children(node, ch);
-        if (nextni == -1) {
-            state.m_node = -1;
-            state.m_pos  = -1;
-            return  state;
         } else {
-            state.m_node = nextni;
-            state.m_pos  = 0;
+            // transition within current vertex
+            if (state.m_pos != sufflen) {
+                int32_t pos = node->m_left + state.m_pos;
+                int32_t trlen = right - left;
+                if (str[pos] != str[left]) {
+                    state.m_node = -1;
+                    state.m_pos  = -1;
+                    return state;
+                } else if (trlen < sufflen - state.m_pos) {
+                    state.m_pos += trlen;
+                    return state;
+                }
+                left += sufflen - state.m_pos;
+                state.m_pos = sufflen;
+            }
         }
     }
     return state;
