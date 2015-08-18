@@ -12,25 +12,45 @@ int32_t st_suflen(st_node* node)
     return node->m_right - node->m_left;
 }
 
-int32_t st_get_children(st_node* node, char ch)
+int32_t st_get_children_ind(st_node* node, char ch)
 {
-    st_list* head = node->m_children;
-    while (head != NULL) {
-        if (ch == head->m_key) {
-            return head->m_value;
+    for (int32_t i = 0; i < node->m_children.m_size; ++i) {
+        st_pair* kv = &node->m_children.m_array[i];
+        if (ch == kv->m_key) {
+            return i;
         }
-        head = head->m_tail;
     }
     return -1;
 }
 
+int32_t st_get_children(st_node* node, char ch)
+{
+    int32_t ind = st_get_children_ind(node, ch);
+    if (ind == -1) {
+        return -1;
+    }
+    return node->m_children.m_array[ind].m_value;
+}
+
 void st_set_children(st_node* node, char ch, int32_t v)
 {
-    st_list* head    = (st_list*) malloc(sizeof(st_list));
-    head->m_key      = ch;
-    head->m_value    = v;
-    head->m_tail     = node->m_children;
-    node->m_children = head;
+    int32_t ind = st_get_children_ind(node, ch);
+    if (ind != -1) {
+        node->m_children.m_array[ind].m_value = v;
+        return;
+    }
+    int32_t size = node->m_children.m_size;
+    if (size == node->m_children.m_capacity) {
+        int32_t cap = size > 0 ? 2 * size : 1;
+        st_pair* mem = (st_pair*) malloc(cap * sizeof(st_pair));
+        memcpy((void*) mem, (void*) node->m_children.m_array, size * sizeof(st_pair));
+        free(node->m_children.m_array);
+        node->m_children.m_array    = mem;
+        node->m_children.m_capacity = cap;
+    }
+    node->m_children.m_array[size].m_key    = ch;
+    node->m_children.m_array[size].m_value  = v;
+    ++node->m_children.m_size;
 }
 
 void st_init_node(st_node* node, int32_t left, int32_t right, int32_t parent)
@@ -39,7 +59,10 @@ void st_init_node(st_node* node, int32_t left, int32_t right, int32_t parent)
     node->m_right       = right;
     node->m_parent      = parent;
     node->m_suflink     = -1;
-    node->m_children    = NULL;
+
+    node->m_children.m_array    = NULL;
+    node->m_children.m_size     = 0;
+    node->m_children.m_capacity = 0;
 }
 
 // append new node to the suffix tree
@@ -205,12 +228,7 @@ st_tree* st_create_tree(const char* str, int32_t len)
 void st_destroy_tree(st_tree* tree)
 {
     for (int32_t i = 0; i < tree->m_size; ++i) {
-        st_list* head = tree->m_nodes[i].m_children;
-        while (head != NULL) {
-            st_list* next = head->m_tail;
-            free(head);
-            head = next;
-        }
+        free(tree->m_nodes[i].m_children.m_array);
     }
     free((void*) tree->m_nodes);
     free((void*) tree);
