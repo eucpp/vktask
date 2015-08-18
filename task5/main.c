@@ -19,6 +19,7 @@ int main(int argc, char** argv)
     read_file(fn, &dict, &size, &error);
     if (error != 0) {
         printf("Error reading dictionary %d \n", error);
+        free(dict);
         return 0;
     }
     st_tree* tree = st_create_tree(dict, size);
@@ -34,7 +35,7 @@ int main(int argc, char** argv)
         }
         if (error != 0) {
             printf("Error reading stdin %d \n", error);
-            return 0;
+            break;
         }
         if (st_contains(tree, buf, len)) {
             puts("YES");
@@ -42,6 +43,8 @@ int main(int argc, char** argv)
             puts("NO");
         }
     }
+
+    free(dict);
 
     return 0;
 }
