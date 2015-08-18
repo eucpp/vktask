@@ -12,9 +12,9 @@ int32_t st_suflen(st_node* node)
     return node->m_right - node->m_left;
 }
 
-int32_t st_get_children_ind(st_node* node, char ch)
+int16_t st_get_children_ind(st_node* node, char ch)
 {
-    for (int32_t i = 0; i < node->m_children.m_size; ++i) {
+    for (int16_t i = 0; i < node->m_children.m_size; ++i) {
         st_pair* kv = &node->m_children.m_array[i];
         if (ch == kv->m_key) {
             return i;
@@ -25,7 +25,7 @@ int32_t st_get_children_ind(st_node* node, char ch)
 
 int32_t st_get_children(st_node* node, char ch)
 {
-    int32_t ind = st_get_children_ind(node, ch);
+    int16_t ind = st_get_children_ind(node, ch);
     if (ind == -1) {
         return -1;
     }
@@ -34,14 +34,14 @@ int32_t st_get_children(st_node* node, char ch)
 
 void st_set_children(st_node* node, char ch, int32_t v)
 {
-    int32_t ind = st_get_children_ind(node, ch);
+    int16_t ind = st_get_children_ind(node, ch);
     if (ind != -1) {
         node->m_children.m_array[ind].m_value = v;
         return;
     }
-    int32_t size = node->m_children.m_size;
+    int16_t size = node->m_children.m_size;
     if (size == node->m_children.m_capacity) {
-        int32_t cap = size > 0 ? 2 * size : 1;
+        int16_t cap = size > 0 ? 2 * size : 1;
         st_pair* mem = (st_pair*) malloc(cap * sizeof(st_pair));
         memcpy((void*) mem, (void*) node->m_children.m_array, size * sizeof(st_pair));
         free(node->m_children.m_array);
@@ -227,7 +227,7 @@ st_tree* st_create_tree(const char* str, int32_t len)
 
 void st_destroy_tree(st_tree* tree)
 {
-    for (int32_t i = 0; i < tree->m_size; ++i) {
+    for (int16_t i = 0; i < tree->m_size; ++i) {
         free(tree->m_nodes[i].m_children.m_array);
     }
     free((void*) tree->m_nodes);

@@ -15,8 +15,8 @@ typedef struct st_pair
 typedef struct st_array
 {
     st_pair*    m_array;
-    int32_t     m_size;
-    int32_t     m_capacity;
+    int16_t     m_size;
+    int16_t     m_capacity;
 } st_array;
 
 typedef struct st_node

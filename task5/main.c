@@ -4,11 +4,10 @@
 #include "suff_tree.h"
 #include "utils.h"
 
-
 int main(int argc, char** argv)
 {
     if (argc < 2) {
-        printf("%s", "Filename of dictionary should be passed as first argument !");
+        printf("%s", "Filename of dictionary should be passed as first argument ! \n");
         return 0;
     }
 
@@ -19,7 +18,7 @@ int main(int argc, char** argv)
 
     read_file(fn, &dict, &size, &error);
     if (error != 0) {
-        printf("Error reading dictionary %d", error);
+        printf("Error reading dictionary %d \n", error);
         return 0;
     }
     st_tree* tree = st_create_tree(dict, size);
@@ -34,7 +33,7 @@ int main(int argc, char** argv)
             break;
         }
         if (error != 0) {
-            printf("Error reading stdin %d", error);
+            printf("Error reading stdin %d \n", error);
             return 0;
         }
         if (st_contains(tree, buf, len)) {
