@@ -14,14 +14,23 @@ int32_t st_suflen(st_node* node)
 
 int32_t st_get_children(st_node* node, char ch)
 {
-    ch -= START_ASCII_CODE;
-    return node->m_children[ch];
+    st_list* head = node->m_children;
+    while (head != NULL) {
+        if (ch == head->m_key) {
+            return head->m_value;
+        }
+        head = head->m_tail;
+    }
+    return -1;
 }
 
 void st_set_children(st_node* node, char ch, int32_t v)
 {
-    ch -= START_ASCII_CODE;
-    node->m_children[ch] = v;
+    st_list* head    = (st_list*) malloc(sizeof(st_list));
+    head->m_key      = ch;
+    head->m_value    = v;
+    head->m_tail     = node->m_children;
+    node->m_children = head;
 }
 
 void st_init_node(st_node* node, int32_t left, int32_t right, int32_t parent)
@@ -30,9 +39,7 @@ void st_init_node(st_node* node, int32_t left, int32_t right, int32_t parent)
     node->m_right       = right;
     node->m_parent      = parent;
     node->m_suflink     = -1;
-
-    node->m_children    = (int32_t*) malloc(sizeof(int32_t) * (END_ASCII_CODE - START_ASCII_CODE));
-    memset((void*) node->m_children, -1, sizeof(int32_t) * (END_ASCII_CODE - START_ASCII_CODE));
+    node->m_children    = NULL;
 }
 
 // append new node to the suffix tree
@@ -43,6 +50,23 @@ int32_t st_append_node(st_tree* tree, int32_t left, int32_t right, int32_t paren
     return ind;
 }
 
+st_state st_edge_transition(const char* str, st_tree* tree, st_state state, int32_t pos, int32_t len)
+{
+    if (str == tree->m_str) {
+        state.m_pos += len;
+        return state;
+    }
+    int32_t offst = tree->m_nodes[state.m_node].m_left;
+    for (int32_t i = 0; i < len; ++i) {
+        if (str[pos++] != tree->m_str[offst + state.m_pos++]) {
+            state.m_node = -1;
+            state.m_pos  = -1;
+            return state;
+        }
+    }
+    return state;
+}
+
 // perform a transition on suffix tree
 // starting position in tree specified by state
 // transitional substring specified by indexes left and right in string str
@@ -50,8 +74,8 @@ st_state st_transition(const char* str, st_tree* tree, st_state state, int32_t l
 {
     while (left < right) {
         st_node* node = &tree->m_nodes[state.m_node];
-        int32_t suflen = st_suflen(node);
-        if (state.m_pos == suflen) {
+        int32_t nodelen = st_suflen(node);
+        if (state.m_pos == nodelen) {
             // transition to next node
             char ch = str[left];
             int32_t nextni = st_get_children(node, ch);
@@ -65,19 +89,21 @@ st_state st_transition(const char* str, st_tree* tree, st_state state, int32_t l
             }
         } else {
             // transition within current vertex
-            if (state.m_pos != suflen) {
-                int32_t pos = node->m_left + state.m_pos;
-                int32_t trlen = right - left;
-                if (tree->m_str[pos] != str[left]) {
-                    state.m_node = -1;
-                    state.m_pos  = -1;
-                    return state;
-                } else if (trlen < suflen - state.m_pos) {
-                    state.m_pos += trlen;
+            int32_t pos = node->m_left + state.m_pos;
+            int32_t trlen = right - left;
+            int32_t suflen = nodelen - state.m_pos;
+            if (tree->m_str[pos] != str[left]) {
+                state.m_node = -1;
+                state.m_pos  = -1;
+                return state;
+            } else if (trlen < suflen) {
+                return st_edge_transition(str, tree, state, left, trlen);
+            } else {
+                state = st_edge_transition(str, tree, state, left, suflen);
+                left += suflen;
+                if (state.m_node == -1) {
                     return state;
                 }
-                left += suflen - state.m_pos;
-                state.m_pos = suflen;
             }
         }
     }
@@ -179,7 +205,12 @@ st_tree* st_create_tree(const char* str, int32_t len)
 void st_destroy_tree(st_tree* tree)
 {
     for (int32_t i = 0; i < tree->m_size; ++i) {
-        free((void*) tree->m_nodes[i].m_children);
+        st_list* head = tree->m_nodes[i].m_children;
+        while (head != NULL) {
+            st_list* next = head->m_tail;
+            free(head);
+            head = next;
+        }
     }
     free((void*) tree->m_nodes);
     free((void*) tree);

@@ -10,13 +10,20 @@
 
 using namespace std;
 
+typedef struct st_list
+{
+    char        m_key;
+    int32_t     m_value;
+    st_list*    m_tail;
+} st_list;
+
 typedef struct st_node
 {
     int32_t     m_left;
     int32_t     m_right;
     int32_t     m_parent;
     int32_t     m_suflink;
-    int32_t*    m_children;
+    st_list*    m_children;
 } st_node;
 
 typedef struct st_state
@@ -49,14 +56,23 @@ int32_t st_suflen(st_node* node)
 
 int32_t st_get_children(st_node* node, char ch)
 {
-    ch -= START_ASCII_CODE;
-    return node->m_children[ch];
+    st_list* head = node->m_children;
+    while (head != NULL) {
+        if (ch == head->m_key) {
+            return head->m_value;
+        }
+        head = head->m_tail;
+    }
+    return -1;
 }
 
 void st_set_children(st_node* node, char ch, int32_t v)
 {
-    ch -= START_ASCII_CODE;
-    node->m_children[ch] = v;
+    st_list* head    = (st_list*) malloc(sizeof(st_list));
+    head->m_key      = ch;
+    head->m_value    = v;
+    head->m_tail     = node->m_children;
+    node->m_children = head;
 }
 
 void st_init_node(st_node* node, int32_t left, int32_t right, int32_t parent)
@@ -65,9 +81,7 @@ void st_init_node(st_node* node, int32_t left, int32_t right, int32_t parent)
     node->m_right       = right;
     node->m_parent      = parent;
     node->m_suflink     = -1;
-
-    node->m_children    = (int32_t*) malloc(sizeof(int32_t) * (END_ASCII_CODE - START_ASCII_CODE));
-    memset((void*) node->m_children, -1, sizeof(int32_t) * (END_ASCII_CODE - START_ASCII_CODE));
+    node->m_children    = NULL;
 }
 
 // append new node to the suffix tree
@@ -233,7 +247,12 @@ st_tree* st_create_tree(const char* str, int32_t len)
 void st_destroy_tree(st_tree* tree)
 {
     for (int32_t i = 0; i < tree->m_size; ++i) {
-        free((void*) tree->m_nodes[i].m_children);
+        st_list* head = tree->m_nodes[i].m_children;
+        while (head != NULL) {
+            st_list* next = head->m_tail;
+            free(head);
+            head = next;
+        }
     }
     free((void*) tree->m_nodes);
     free((void*) tree);
