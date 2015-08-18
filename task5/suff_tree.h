@@ -2,6 +2,7 @@
 #define SUFF_TREE_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 // NOTE: we use int32_t everywhere because this type is large enough to index 128 Mb == 2^27 byte.
 
