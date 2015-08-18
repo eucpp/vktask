@@ -44,6 +44,7 @@ int main(int argc, char** argv)
         }
     }
 
+    st_destroy_tree(tree);
     free(dict);
 
     return 0;

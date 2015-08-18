@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
 
 void read_file(const char* filename, char** content, int32_t* size, int* error)
 {
@@ -10,6 +11,10 @@ void read_file(const char* filename, char** content, int32_t* size, int* error)
     assert(sizeof(char) == 1);
 
     FILE* file = fopen(filename, "rb");
+    if (file == NULL) {
+        *error = errno;
+        return;
+    }
     fseek(file, 0L, SEEK_END);
     *size = ftell(file);
     fseek(file, 0L, SEEK_SET);
